@@ -29,7 +29,7 @@ logging.basicConfig(
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
     messages.append({"role":"user","content":update.message.text})
-    completion = openai.chat.completions.create(model="gpt-4.0-mini",
+    completion = openai.chat.completions.create(model="gpt-4o-mini",
                                                messages=messages)
     completion_answer=completion.choices[0].message
     messages.append(completion_answer)
@@ -38,7 +38,7 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                                   text=completion_answer.content)
     
 async def rag(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    answer = answer_question(df, question=update.message.text, debug=True)
+    answer = answer_question(question=update.message.text, debug=True)
     await context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -51,7 +51,7 @@ async def main() -> None:
 
     start_handler = CommandHandler('start', start)
     chat_handler = CommandHandler('chat', chat)
-    mozilla_handler = CommandHandler('mozilla', mozilla)
+    mozilla_handler = CommandHandler('rag', rag)
 
     application.add_handler(start_handler)
     application.add_handler(chat_handler)
