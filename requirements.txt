@@ -1,0 +1,14 @@
+unstructured
+tiktoken
+pinecone-client
+pypdf
+openai
+langchain
+pandas
+numpy
+python-dotenv
+telegram
+scipy
+CairoSVG
+jupyter
+faiss-cpu
