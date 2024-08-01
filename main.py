@@ -37,7 +37,7 @@ async def rag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     recent_messages = messages[1:] if len(messages) > 1 else []
     recent_messages.append({"role": "user", "content": update.message.text})
     recent_history = "\n".join([f"{m['role']}: {m['content']}" for m in recent_messages])
-    full_question = f"System: {messages[0]['content']}\n{recent_history}"
+    full_question = f"System: {messages[0]['content']} in Gamer's hideout. Previous messages: \n{recent_history}"
     answer = answer_question(question=full_question, debug=True)
     
     # Append the user question and AI answer to the messages list

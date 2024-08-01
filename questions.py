@@ -38,17 +38,17 @@ def distances_from_embeddings(
 
     return distances
 
-def create_context(question, max_len = 1600): 
+def create_context(question, max_len = 4000):  
     """ 
     Create a context for a question by finding the most similar context from the dataframe 
     """ 
     # Get the embeddings for the question 
     q_embeddings = openai.embeddings.create( 
-      input=question, model='text-embedding-ada-002').data[0].embedding
+      input=question, model='text-embedding-3-small').data[0].embedding  # Updated model
     q_embeddings = np.array(q_embeddings).reshape(1, -1)
     
     # Search the index
-    k = 4  # Number of nearest neighbors
+    k = 8  # Increased number of nearest neighbors
     distances, indices = index.search(q_embeddings, k)
 
     # Retrieve the corresponding text for the nearest neighbors
@@ -66,12 +66,13 @@ def create_context(question, max_len = 1600):
     # Return the context 
     return f"\n\n###\n\n{context}"
 
+
 def answer_question( 
                 model="gpt-4o-mini",
                 question="What is AI?",
-                max_len=1600,
+                max_len=4000,
                 debug=False,
-                max_tokens=300,
+                max_tokens=500,
                 stop_sequence=None): 
     """ 
     Answer a question based on the most similar context from the dataframe texts 
@@ -96,7 +97,7 @@ def answer_question(
             },
             {
                 "role": "user",
-                "content": f"Answer the question based on the context below. If the exact game isn't mentioned, look for similar titles. If you can't find the price, say 'I couldn't find the price for this game.'\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:"
+                "content": f"Answer the question based on the context below. If the exact game isn't mentioned, look for similar titles. If you can't find the price, say 'I couldn't find the price for this game. If you can't find context, say I don't know the answer to that.'\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:"
             }],
             temperature=0,
             max_tokens=max_tokens,
