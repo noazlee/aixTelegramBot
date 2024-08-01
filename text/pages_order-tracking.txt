@@ -89,15 +89,7 @@ VR Consoles
 VR Accessories
 DIGITAL CODE
 ☎ 016-2991681
-Shopping Cart
-Your cart is currently empty.
-Continue shopping
-Coupon Code
-Apply
-Total
-Taxes and shipping fee will be calculated at checkout
-Total
-Checkout
+
 Order Tracking
 Email
 SMS
@@ -354,3 +346,4 @@ Zimbabwe
 Order ID
 View Order
 Signup for exclusive promotions, coupons and events.
+Enter yo

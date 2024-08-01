@@ -1,16 +1,12 @@
 # /Users/noahlee/Documents/DS Practice/AIX2/venv - conda env
 import os
 import logging
-import pandas as pd
-import numpy as np
 from questions import answer_question
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, ApplicationBuilder
 from openai import OpenAI
 import asyncio
 import nest_asyncio
-import pickle
-import faiss
 
 nest_asyncio.apply()
 
@@ -19,7 +15,7 @@ tg_bot_token = os.environ['TG_BOT_TOKEN']
 
 messages = [{
     "role":"system",
-    "content":"You are a helpful assistant that answers questions."
+    "content":"You are a helpful assistant that answers questions about Video Games and Gamer's Hideout. Use the context given if possible and limit answers to 100 characters."
 }]
 
 logging.basicConfig(
@@ -28,17 +24,26 @@ logging.basicConfig(
 )
 
 async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    messages.append({"role":"user","content":update.message.text})
+    messages.append({"role": "user", "content": update.message.text})
     completion = openai.chat.completions.create(model="gpt-4o-mini",
                                                messages=messages)
-    completion_answer=completion.choices[0].message
-    messages.append(completion_answer)
+    completion_answer = completion.choices[0].message
+    messages.append({"role": completion_answer.role, "content": completion_answer.content})
 
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                   text=completion_answer.content)
     
 async def rag(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    answer = answer_question(question=update.message.text, debug=True)
+    recent_messages = messages[1:] if len(messages) > 1 else []
+    recent_messages.append({"role": "user", "content": update.message.text})
+    recent_history = "\n".join([f"{m['role']}: {m['content']}" for m in recent_messages])
+    full_question = f"System: {messages[0]['content']}\n{recent_history}"
+    answer = answer_question(question=full_question, debug=True)
+    
+    # Append the user question and AI answer to the messages list
+    messages.append({"role": "user", "content": update.message.text})
+    messages.append({"role": "assistant", "content": answer})
+    
     await context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

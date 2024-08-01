@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from openai import OpenAI
 from typing import List
 from scipy import spatial
@@ -39,7 +38,7 @@ def distances_from_embeddings(
 
     return distances
 
-def create_context(question, max_len = 800): 
+def create_context(question, max_len = 1600): 
     """ 
     Create a context for a question by finding the most similar context from the dataframe 
     """ 
@@ -49,13 +48,12 @@ def create_context(question, max_len = 800):
     q_embeddings = np.array(q_embeddings).reshape(1, -1)
     
     # Search the index
-    k = 2  # Number of nearest neighbors
+    k = 4  # Number of nearest neighbors
     distances, indices = index.search(q_embeddings, k)
 
     # Retrieve the corresponding text for the nearest neighbors
     context=""
     total_tokens = 0
-    results = [(id_to_text[idx], distances[0][i]) for i, idx in enumerate(indices[0])]
     for i, idx in enumerate(indices[0]):
         text = id_to_text[idx]
         text_tokens = tokenizer.encode(text)
@@ -68,13 +66,12 @@ def create_context(question, max_len = 800):
     # Return the context 
     return f"\n\n###\n\n{context}"
 
-
 def answer_question( 
                 model="gpt-4o-mini",
                 question="What is AI?",
-                max_len=800,
+                max_len=1600,
                 debug=False,
-                max_tokens=150,
+                max_tokens=300,
                 stop_sequence=None): 
     """ 
     Answer a question based on the most similar context from the dataframe texts 
@@ -94,10 +91,12 @@ def answer_question(
         response = openai.chat.completions.create(
             model=model,
             messages=[{
-                "role":
-                "user",
-                "content":
-                f"Answer the question based on the context below, and if the question can't be answered based on the context, say \"I don't know.\" Try to site sources to the links in the context when possible.\n\nContext: {context}\n\n---\n\nQuestion: {question}\nSource:\nAnswer:", 
+                "role": "system",
+                "content": "You are a helpful assistant that answers questions about video games and their prices. If a game title is mentioned, try to find its price even if the exact wording doesn't match. Look for similar titles."
+            },
+            {
+                "role": "user",
+                "content": f"Answer the question based on the context below. If the exact game isn't mentioned, look for similar titles. If you can't find the price, say 'I couldn't find the price for this game.'\n\nContext: {context}\n\n---\n\nQuestion: {question}\nAnswer:"
             }],
             temperature=0,
             max_tokens=max_tokens,

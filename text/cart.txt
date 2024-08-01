@@ -89,17 +89,7 @@ VR Consoles
 VR Accessories
 DIGITAL CODE
 ☎ 016-2991681
-Shopping Cart
-Continue shopping
-Your cart is currently empty.
-Continue shopping
-All Products
-Quantity
-Total
-Coupon Code
-Apply
-Total
-Checkout
+
 Taxes and shipping fee will be calculated at checkout
 Total
 Checkout
@@ -108,4 +98,5 @@ Enter your email
 About Us
 Blog
 Career
-Gamers Protection P
+Gamers Protection Plan
+Term
