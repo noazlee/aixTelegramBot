@@ -1,4 +1,4 @@
-# Hello, this is my execution of a Telegram LLM bot - which may or may not be used as an example for AIX's AI engineering course.
+# The Telegram LLM bot - Which will accompany the AIX Academy AI Engineering Bootcamp
 
 ## Instruction to run this code:
 1. Create a conda environment in the root directory.
