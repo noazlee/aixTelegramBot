@@ -13,7 +13,7 @@ from telegram.ext import (
 from openai import OpenAI
 import asyncio
 import nest_asyncio
-
+import requests
 from functions import functions, run_function
 import json
 
@@ -30,13 +30,13 @@ Input: What is the sentiment for The Legend of Zelda: Breath of the Wild?
 Output: The Legend of Zelda: Breath of the Wild has an overall very positive sentiment with a metacritic score of 97.
 
 // SAMPLE 2
-Input: What is the sentiment for Pokemon Shining Pearl?
+Input: How is Pokemon Shining Pearl?
 Output: Pokemon Shining Pearl has an overall mediocre sentiment with a metacritic score of 73.
 """
 
 examples = [
     {"role": "user", "content": "What is Gamers' Hideout?"},
-    {"role": "assistant", "content": ""},
+    {"role": "assistant", "content": "Gamers' Hideout is the most popular video game seller in Malaysia with various locations and services tailored for gamers. It operates both as a retail store and a gaming lounge, catering to different aspects of gaming culture and community."},
 ]
 
 messages = [{
@@ -114,6 +114,16 @@ async def rag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     await context.bot.send_message(chat_id=update.effective_chat.id, text=answer)
 
+async def image(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    response = openai.images.generate(prompt=update.message.text,
+                                    model="dall-e-3",
+                                    n=1,
+                                    size="1024x1024")
+    image_url = response.data[0].url
+    image_response = requests.get(image_url)
+    await context.bot.send_photo(chat_id=update.effective_chat.id,
+                               photo=image_response.content)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id,
                                   text="I am a bot, please talk to me.")
@@ -123,10 +133,12 @@ async def main() -> None:
     application = ApplicationBuilder().token(tg_bot_token).build()
 
     start_handler = CommandHandler('start', start)
+    image_handler = CommandHandler('image', image)
     chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
     mozilla_handler = CommandHandler('rag', rag)
 
     application.add_handler(start_handler)
+    application.add_handler(image_handler)
     application.add_handler(chat_handler)
     application.add_handler(mozilla_handler)
 
