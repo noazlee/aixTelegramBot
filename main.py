@@ -135,12 +135,12 @@ async def main() -> None:
     start_handler = CommandHandler('start', start)
     image_handler = CommandHandler('image', image)
     chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
-    mozilla_handler = CommandHandler('rag', rag)
+    rag_handler = CommandHandler('rag', rag)
 
     application.add_handler(start_handler)
     application.add_handler(image_handler)
     application.add_handler(chat_handler)
-    application.add_handler(mozilla_handler)
+    application.add_handler(rag_handler)
 
     await application.run_polling()
 
