@@ -12,3 +12,6 @@ scipy
 CairoSVG
 jupyter
 faiss-cpu
+deepgram-sdk
+aiohttp
+deepgram-sdk==2.12.0

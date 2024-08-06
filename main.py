@@ -16,11 +16,14 @@ import nest_asyncio
 import requests
 from functions import functions, run_function
 import json
+from deepgram import Deepgram
 
 nest_asyncio.apply()
 
 openai = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
 tg_bot_token = os.environ['TG_BOT_TOKEN']
+deepgram_api_key = os.environ['DEEPGRAM_API_KEY']
+
 
 CODE_PROMPT = """
 Here are some input:output examples for sentiment analysis. Please use these and follow the styling for
@@ -100,7 +103,75 @@ async def chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
     else:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=initial_response_message.content)
-    
+
+async def transcribe_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    voice_id = update.message.voice.file_id
+    file_path = f"voice_note_{voice_id}.ogg"
+    tts_file_path = f"response_{voice_id}.mp3"
+
+    if voice_id:
+        try:
+            file = await context.bot.get_file(voice_id)
+            await file.download_to_drive(file_path)
+            await update.message.reply_text("Voice note downloaded, transcribing now")
+            
+            with open(file_path, 'rb') as audio:
+                source = {"buffer": audio, "mimetype": 'audio/ogg'}
+                options = {'punctuate': True, 'language': 'en-US'}
+                
+                # Initialize Deepgram client within the function
+                deepgram = Deepgram(deepgram_api_key)
+                response = await deepgram.transcription.prerecorded(source, options)
+                
+            transcript = response['results']['channels'][0]['alternatives'][0]['transcript']
+            
+            messages.append({"role": "user", "content": transcript})
+            response = openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages
+            )
+            response_message = response.choices[0].message
+            messages.append(response_message)
+            
+            await update.message.reply_text(f"Transcript finished:\n{transcript}")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=response_message.content)
+            
+            # Text-to-Speech (TTS) Conversion
+            tts_response = requests.post(
+                'https://api.deepgram.com/v1/speak',
+                headers={
+                    'Authorization': f'Token {deepgram_api_key}',
+                    'Content-Type': 'application/json'
+                },
+                json={
+                    'text': response_message.content
+                }
+            )
+
+            if tts_response.status_code != 200:
+                raise Exception(f"TTS request failed: {tts_response.status_code} {tts_response.text}")
+
+            with open(tts_file_path, 'wb') as tts_file:
+                tts_file.write(tts_response.content)
+
+            # Send TTS audio response
+            with open(tts_file_path, 'rb') as tts_audio:
+                await context.bot.send_voice(chat_id=update.effective_chat.id, voice=tts_audio)
+            
+        except Exception as e:
+            error_message = f"An error occurred: {str(e)}"
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=error_message)
+
+        finally:
+            # Clean up temporary files
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            if os.path.exists(tts_file_path):
+                os.remove(tts_file_path)
+    else:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="Please send a voice message to transcribe.")
+      
+
 async def rag(update: Update, context: ContextTypes.DEFAULT_TYPE):
     recent_messages = messages[1:] if len(messages) > 1 else []
     recent_messages.append({"role": "user", "content": update.message.text})
@@ -135,12 +206,15 @@ async def main() -> None:
     start_handler = CommandHandler('start', start)
     image_handler = CommandHandler('image', image)
     chat_handler = MessageHandler(filters.TEXT & (~filters.COMMAND), chat)
-    mozilla_handler = CommandHandler('rag', rag)
+    voice_handler = MessageHandler(filters.VOICE, transcribe_message)
+    rag_handler = CommandHandler('rag', rag)
+
 
     application.add_handler(start_handler)
     application.add_handler(image_handler)
     application.add_handler(chat_handler)
-    application.add_handler(mozilla_handler)
+    application.add_handler(voice_handler)
+    application.add_handler(rag_handler)
 
     await application.run_polling()
 
